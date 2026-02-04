@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archive Bot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:active {
+            transform: scale(0.95);
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--tg-theme-link-color, #667eea);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.6;
+            margin-top: 4px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .menu-btn {
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            border: none;
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--tg-theme-text-color, #000);
+        }
+
+        .menu-btn:active {
+            transform: scale(0.95);
+            background: var(--tg-theme-bg-color, #fff);
+        }
+
+        .menu-btn-icon {
+            font-size: 32px;
+        }
+
+        .section {
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message-item {
+            background: var(--tg-theme-bg-color, #fff);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--tg-theme-link-color, #667eea);
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .message-from {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .message-date {
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-new {
+            background: #10b981;
+            color: white;
+        }
+
+        .badge-deleted {
+            background: #ef4444;
+            color: white;
+        }
+
+        .badge-edited {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .achievement-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--tg-theme-bg-color, #fff);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .achievement-icon {
+            font-size: 36px;
+            min-width: 48px;
+            text-align: center;
+        }
+
+        .achievement-info {
+            flex: 1;
+        }
+
+        .achievement-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .achievement-desc {
+            font-size: 12px;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+
+        .achievement-points {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--tg-theme-link-color, #667eea);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 12px;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.95);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--tg-theme-hint-color, #ccc);
+            border-radius: 12px;
+            font-size: 16px;
+            background: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            margin-bottom: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.6;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-bg-color, #fff);
+            border-top: 1px solid var(--tg-theme-hint-color, #e5e5e5);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 8px;
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .tab-btn.active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Главная страница -->
+        <div id="page-home" class="page">
+            <div class="header">
+                <h1>🔐 Archive Bot</h1>
+                <p>Ваш личный архив переписки</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📩</div>
+                    <div class="stat-value" id="stat-messages">0</div>
+                    <div class="stat-label">Сообщений</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📁</div>
+                    <div class="stat-value" id="stat-files">0</div>
+                    <div class="stat-label">Файлов</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="stat-points">0</div>
+                    <div class="stat-label">Очков</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-value" id="stat-streak">0</div>
+                    <div class="stat-label">Дней подряд</div>
+                </div>
+            </div>
+
+            <div class="menu-grid">
+                <button class="menu-btn" onclick="openPage('messages')">
+                    <span class="menu-btn-icon">💬</span>
+                    <span>Сообщения</span>
+                </button>
+                <button class="menu-btn" onclick="openPage('search')">
+                    <span class="menu-btn-icon">🔍</span>
+                    <span>Поиск</span>
+                </button>
+                <button class="menu-btn" onclick="openPage('achievements')">
+                    <span class="menu-btn-icon">🏆</span>
+                    <span>Достижения</span>
+                </button>
+                <button class="menu-btn" onclick="openPage('settings')">
+                    <span class="menu-btn-icon">⚙️</span>
+                    <span>Настройки</span>
+                </button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span>📊</span>
+                    <span>Подписка</span>
+                </div>
+                <div id="subscription-info">
+                    <div class="loading">Загрузка...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Страница сообщений -->
+        <div id="page-messages" class="page" style="display:none;">
+            <div class="section-title">
+                <span>💬</span>
+                <span>Последние сообщения</span>
+            </div>
+            <div id="messages-list">
+                <div class="loading">Загрузка...</div>
+            </div>
+        </div>
+
+        <!-- Страница поиска -->
+        <div id="page-search" class="page" style="display:none;">
+            <div class="section-title">
+                <span>🔍</span>
+                <span>Поиск сообщений</span>
+            </div>
+            <input type="text" class="search-box" id="search-input" placeholder="Введите текст для поиска...">
+            <div id="search-results">
+                <div class="empty-state">Введите запрос для поиска</div>
+            </div>
+        </div>
+
+        <!-- Страница достижений -->
+        <div id="page-achievements" class="page" style="display:none;">
+            <div class="section-title">
+                <span>🏆</span>
+                <span>Ваши достижения</span>
+            </div>
+            <div id="achievements-list">
+                <div class="loading">Загрузка...</div>
+            </div>
+        </div>
+
+        <!-- Страница настроек -->
+        <div id="page-settings" class="page" style="display:none;">
+            <div class="section">
+                <div class="section-title">
+                    <span>💎</span>
+                    <span>Подписка</span>
+                </div>
+                <div id="settings-subscription">
+                    <div class="loading">Загрузка...</div>
+                </div>
+                <button class="btn-primary" onclick="openSubscription()">
+                    Управление подпиской
+                </button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span>📤</span>
+                    <span>Экспорт данных</span>
+                </div>
+                <button class="btn-primary" onclick="exportData()">
+                    Экспортировать все сообщения
+                </button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span>ℹ️</span>
+                    <span>О приложении</span>
+                </div>
+                <p style="opacity: 0.6; font-size: 14px; line-height: 1.6;">
+                    Archive Bot v3.0<br>
+                    Безопасное хранение переписки<br>
+                    © 2024 Archive Bot
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя панель навигации -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="openPage('home')">🏠</button>
+        <button class="tab-btn" onclick="openPage('messages')">💬</button>
+        <button class="tab-btn" onclick="openPage('search')">🔍</button>
+        <button class="tab-btn" onclick="openPage('achievements')">🏆</button>
+        <button class="tab-btn" onclick="openPage('settings')">⚙️</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        let currentPage = 'home';
+        let userData = null;
+
+        // Навигация
+        function openPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.getElementById(`page-${page}`).style.display = 'block';
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-btn')[['home', 'messages', 'search', 'achievements', 'settings'].indexOf(page)].classList.add('active');
+            
+            currentPage = page;
+            loadPageData(page);
+        }
+
+        // Загрузка данных страницы
+        async function loadPageData(page) {
+            switch(page) {
+                case 'home':
+                    await loadHomeData();
+                    break;
+                case 'messages':
+                    await loadMessages();
+                    break;
+                case 'achievements':
+                    await loadAchievements();
+                    break;
+                case 'settings':
+                    await loadSettings();
+                    break;
+            }
+        }
+
+        // Загрузка данных главной страницы
+        async function loadHomeData() {
+            try {
+                const response = await fetch('/api/stats', {
+                    headers: { 'X-Telegram-Init-Data': tg.initData }
+                });
+                const data = await response.json();
+                userData = data;
+
+                document.getElementById('stat-messages').textContent = data.stats.total_messages || 0;
+                document.getElementById('stat-files').textContent = data.stats.total_files || 0;
+                document.getElementById('stat-points').textContent = data.stats.total_points || 0;
+                document.getElementById('stat-streak').textContent = data.stats.current_streak || 0;
+
+                // Информация о подписке
+                const subDiv = document.getElementById('subscription-info');
+                if (data.subscription && !data.subscription.isExpired) {
+                    const endDate = new Date(data.subscription.subscription_end).toLocaleDateString();
+                    subDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 600;">✅ Активна</div>
+                                <div style="font-size: 12px; opacity: 0.6; margin-top: 4px;">До ${endDate}</div>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: var(--tg-theme-link-color);">
+                                ${data.subscription.daysLeft} дн.
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${Math.min(100, (data.subscription.daysLeft / 30) * 100)}%"></div>
+                        </div>
+                    `;
+                } else {
+                    subDiv.innerHTML = `
+                        <div style="text-align: center; padding: 12px;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">⚠️ Подписка неактивна</div>
+                            <button class="btn-primary" onclick="openPage('settings')">Активировать</button>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error('Error loading stats:', e);
+            }
+        }
+
+        // Загрузка сообщений
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/messages?limit=50', {
+                    headers: { 'X-Telegram-Init-Data': tg.initData }
+                });
+                const messages = await response.json();
+
+                const listDiv = document.getElementById('messages-list');
+                if (messages.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state">Нет сообщений</div>';
+                    return;
+                }
+
+                listDiv.innerHTML = messages.map(msg => {
+                    const date = new Date(msg.date * 1000).toLocaleString();
+                    let badges = '';
+                    if (msg.is_deleted) badges += '<span class="badge badge-deleted">Удалено</span>';
+                    if (msg.is_edited) badges += '<span class="badge badge-edited">Изменено</span>';
+
+                    return `
+                        <div class="message-item">
+                            <div class="message-header">
+                                <div class="message-from">${msg.from_first_name || 'Неизвестно'}${badges}</div>
+                                <div class="message-date">${date}</div>
+                            </div>
+                            <div class="message-text">${msg.text || '[Медиа]'}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Error loading messages:', e);
+            }
+        }
+
+        // Поиск
+        document.getElementById('search-input')?.addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
+            if (query.length < 2) {
+                document.getElementById('search-results').innerHTML = '<div class="empty-state">Введите минимум 2 символа</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
+                    headers: { 'X-Telegram-Init-Data': tg.initData }
+                });
+                const results = await response.json();
+
+                const resultsDiv = document.getElementById('search-results');
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="empty-state">Ничего не найдено</div>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = results.map(msg => {
+                    const date = new Date(msg.date * 1000).toLocaleString();
+                    return `
+                        <div class="message-item">
+                            <div class="message-header">
+                                <div class="message-from">${msg.from_first_name || 'Неизвестно'}</div>
+                                <div class="message-date">${date}</div>
+                            </div>
+                            <div class="message-text">${msg.text || '[Медиа]'}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Error searching:', e);
+            }
+        });
+
+        // Загрузка достижений
+        async function loadAchievements() {
+            try {
+                const response = await fetch('/api/achievements', {
+                    headers: { 'X-Telegram-Init-Data': tg.initData }
+                });
+                const achievements = await response.json();
+
+                const listDiv = document.getElementById('achievements-list');
+                if (achievements.length === 0) {
+                    listDiv.innerHTML = '<div class="empty-state">Пока нет достижений</div>';
+                    return;
+                }
+
+                listDiv.innerHTML = achievements.map(ach => `
+                    <div class="achievement-badge">
+                        <div class="achievement-icon">${ach.icon || '🏆'}</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">${ach.name}</div>
+                            <div class="achievement-desc">${ach.description}</div>
+                        </div>
+                        <div class="achievement-points">+${ach.points_earned}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Error loading achievements:', e);
+            }
+        }
+
+        // Настройки
+        async function loadSettings() {
+            const subDiv = document.getElementById('settings-subscription');
+            if (userData && userData.subscription) {
+                const sub = userData.subscription;
+                if (!sub.isExpired) {
+                    const endDate = new Date(sub.subscription_end).toLocaleDateString();
+                    subDiv.innerHTML = `
+                        <div style="padding: 12px;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">✅ Активна до ${endDate}</div>
+                            <div style="opacity: 0.6;">Осталось: ${sub.daysLeft} дней</div>
+                        </div>
+                    `;
+                } else {
+                    subDiv.innerHTML = `<div style="padding: 12px; opacity: 0.6;">Подписка неактивна</div>`;
+                }
+            }
+        }
+
+        // Действия
+        function openSubscription() {
+            tg.openTelegramLink('https://t.me/your_bot?start=subscription');
+        }
+
+        async function exportData() {
+            try {
+                tg.showPopup({
+                    message: 'Экспорт данных начат. Файл будет отправлен в бот.',
+                    buttons: [{type: 'ok'}]
+                });
+
+                await fetch('/api/export', {
+                    method: 'POST',
+                    headers: { 'X-Telegram-Init-Data': tg.initData }
+                });
+            } catch (e) {
+                console.error('Error exporting:', e);
+            }
+        }
+
+        // Инициализация
+        loadHomeData();
+    </script>
+</body>
+</html>
